@@ -1,0 +1,17 @@
+{"name":"r05","steps":[
+ {"do":"focus","title":"ESP-IDF Installation Manager","size":"1920x1080","pos":"0,0"},
+ {"do":"wait","s":0.80},
+ {"do":"move","x":1085,"y":400,"dur":0.90,"curve":0.08},
+ {"do":"wait","s":0.30},
+ {"do":"click"},
+ {"do":"wait","s":0.25},
+ {"do":"hotkey","mod":17,"vk":65},
+ {"do":"wait","s":0.15},
+ {"do":"clip","text":"E:\\esp\\v6.1"},
+ {"do":"wait","s":0.06},
+ {"do":"hotkey","mod":17,"vk":86},
+ {"do":"wait","s":2.10}
+],
+ "_status": "sample-only",
+ "_note": "只在『输入框已带焦点』时可用；点击路径框会弹目录选择框，那时本脚本会把文字打进对话框"
+}

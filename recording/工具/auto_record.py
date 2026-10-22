@@ -70,6 +70,37 @@ def toasts(action):
 LAST_RECT = {}
 
 
+def _force_foreground(h):
+    """把窗口真正提到前台。返回 True/False。
+
+    ★ SetForegroundWindow 在"前台锁定"下会**静默失败**：返回值不说明问题，
+      只有事后查 GetForegroundWindow 才知道有没有成功。解法是临时把自己
+      接到当前前台线程的输入队列上（AttachThreadInput），再抢。
+    """
+    import ctypes
+    u = ctypes.windll.user32
+    u.ShowWindow(h, 9)                      # SW_RESTORE：最小化的先还原
+    if u.GetForegroundWindow() == h:
+        return True
+    fg = u.GetForegroundWindow()
+    tid_fg = u.GetWindowThreadProcessId(fg, None) if fg else 0
+    tid_me = ctypes.windll.kernel32.GetCurrentThreadId()
+    if tid_fg and tid_fg != tid_me:
+        u.AttachThreadInput(tid_me, tid_fg, True)
+        u.SetForegroundWindow(h)
+        u.BringWindowToTop(h)
+        u.AttachThreadInput(tid_me, tid_fg, False)
+    else:
+        u.SetForegroundWindow(h)
+    if u.GetForegroundWindow() == h:
+        return True
+    try:                                     # 兜底：切任务窗口（不受前台锁定约束）
+        u.SwitchToThisWindow(h, True)
+    except Exception:
+        pass
+    return u.GetForegroundWindow() == h
+
+
 def focus(title, size=None, pos=None):
     """把标题含 title 的窗口提到前台。
 
@@ -103,12 +134,10 @@ def focus(title, size=None, pos=None):
         time.sleep(0.35)
     else:
         u.ShowWindow(h, 3)  # SW_MAXIMIZE
-    # SetForegroundWindow 会被「前台锁定」挡掉且不报错 ⇒ 先置顶再抢焦点
+    # SetForegroundWindow 会被「前台锁定」挡掉且不报错 ⇒ 先置顶再抢焦点，
+    # 抢不到就 AttachThreadInput 借前台线程的输入队列（2026-10-22 实测：直接调会被挡）
     u.SetWindowPos(h, -1, 0, 0, 0, 0, 0x0001 | 0x0002)
-    try:
-        u.SetForegroundWindow(h)
-    except Exception:
-        pass
+    _force_foreground(h)
     time.sleep(0.6)
     fg = u.GetForegroundWindow()
     try:
@@ -191,8 +220,10 @@ def est_dur(steps):
             t += float(s.get("s", 0.5))
         elif k == "focus":
             t += 0.5
-        elif k == "type":
-            t += len(str(s.get("text", ""))) * float(s.get("gap", 0.045))
+        elif k in ("type", "typehuman"):
+            t += len(str(s.get("text", ""))) * float(s.get("gap", 0.06))
+        elif k in ("typefast", "paste"):
+            t += 0.15
         elif k == "press":
             t += int(s.get("times", 1)) * 0.1
         elif k == "hotkey":
@@ -216,7 +247,14 @@ def run_steps(steps):
         elif k == "wait":
             time.sleep(float(s.get("s", 0.5)))
         elif k == "type":
-            M.type_text(str(s.get("text", "")), float(s.get("gap", 0.045)))
+            # ★ 走 Unicode 通道：VkKeyScanW 那套中文静默丢、输入法会把 "-p " 吃成 "-拍"
+            M.type_unicode(str(s.get("text", "")), float(s.get("gap", 0.0)))
+        elif k == "typefast":
+            M.type_unicode(str(s.get("text", "")), 0.0)
+        elif k == "typehuman":
+            M.type_human(str(s.get("text", "")), float(s.get("gap", 0.055)))
+        elif k == "paste":
+            M.paste_text(str(s.get("text", "")))
         elif k == "press":
             M.press(int(s.get("vk", 13)), int(s.get("times", 1)))
         elif k == "hotkey":
@@ -228,9 +266,9 @@ def run_steps(steps):
             print("[clip] " + str(s.get("text", "")))
         elif k == "focus":
             ok = focus(s.get("title", ""), s.get("size"), s.get("pos"))
-            print(("[focus] " + s.get("title", "") + (" ok" if ok else " NOT FOUND")))
+            print(("[focus] " + s.get("title", "") + (" ok" if ok else " FAILED（窗口在但抢不到前台，或标题不存在）")))
             if not ok:
-                raise RuntimeError("focus 失败：没找到窗口 " + s.get("title", ""))
+                raise RuntimeError("focus 失败：" + s.get("title", ""))
         else:
             print(f"[warn] 未知动作 {k}，跳过")
 
