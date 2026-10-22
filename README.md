@@ -125,6 +125,10 @@ node scripts/render.cjs "my-shot.html" 6.0 voice.mp3 "out/my-shot-4K.mp4"
 讲解片里常有"真人操作软件"的镜头。无头渲染没有鼠标，软件光标是画上去的——两者都会露馅。
 `recording/` 反过来做：**结构归 DOM，手势归 OS，判据归像素**。
 
+> **最近更新 · 2026-10-22**：打字全部改走 `SendInput` 的 Unicode 通道 —— 中文、反斜杠、`%` 这类符号不再被输入法吃掉
+> （12 个字 20–32ms）。新增 `typefast` / `typehuman` / `paste` 三个动作；`focus()` 修掉「抢不到前台却报窗口不存在」的误报。
+> 实测矩阵见 [`recording/键盘与快速输入.md`](recording/键盘与快速输入.md)，每轮改动见 [`recording/CHANGELOG.md`](recording/CHANGELOG.md)。
+
 ```bash
 set NODE_PATH=C:\path\to\node_modules        # 需要 puppeteer-core
 python recording/rec_web.py --url "https://example.com/setup" --steps my_steps.json --out out/r01.mp4
