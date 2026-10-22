@@ -1,96 +1,130 @@
-# 自动录屏（Windows）
+# 自动录屏工具 · Screen Recorder
 
-把"真人操作网页"录成视频，而且**画面里的鼠标是真的**——不是软件光标、不是后期贴上去的。
-一条命令：起浏览器 → 量元素坐标 → 开录 → 真鼠标点 → 收片。
+> **一句话**：给一条命令，自动做完「开浏览器 / 关通知 / 真光标点击 / 录屏 / 校验产物」——
+> 把教程、演示、软件操作片里那些「人在旁边按开始/停止」的镜头变成可重放的脚本。
+>
+> **来源**：从 `语音转动画总项目/15-ESP32教程/04-工具/` 整体摘出，2026-10-21 独立立户。
+> 教程线只留 `04-工具/录屏工具-指针.md` 一个指针。
 
-```bash
-set NODE_PATH=C:\path\to\node_modules          # 需要 puppeteer-core
-python rec_web.py --url "https://example.com/setup" --steps my_steps.json --out out/r01.mp4
-```
-
-## 为什么不用无头录屏 / 不用软件光标
-
-教学片里观众要看的是"手在哪儿、点了什么"。无头渲染没有鼠标，软件光标是画上去的——两者都会露馅。
-这里反过来：**结构归 DOM，手势归 OS，判据归像素**。
-
-| 归谁 | 用什么 | 为什么 |
-|---|---|---|
-| 结构 | Chrome DevTools（`web_drive.cjs`） | 元素在哪、多大，DOM 说了算；改版也不会点空 |
-| 手势 | `SetCursorPos` + `mouse_event`（`mouse.py`） | 真实点击，画面里有真光标，系统会给出真实反应 |
-| 判据 | 抓帧找红块（`calib.py`） | 窗口边框、DPI、书签栏都会让"算出来的坐标"偏 8–39px |
-
-## 三件套
-
-```
-web_drive.cjs   有头 Chrome：打开页面、取 DOM 矩形、在左上角插一个 12×12 红块
-      ↓  rects.json（元素在视口里的位置）
-calib.py        抓一帧桌面 → 在图里找红块 → 视口原点（像素级）
-      ↓  origin（视口左上角在屏幕上的坐标）
-auto_record.py  gdigrab 区域录制 + 按脚本驱动真鼠标
-      ↓  mp4
-rec_web.py      把上面三步串成一条命令（还负责预热、哨兵、拒录）
-```
-
-**为什么要红块**：浏览器的"视口原点"没有 API 能直接问。`outerHeight − innerHeight` 只能估 UI 高度，
-书签栏 / 缩放 / DPI 一变就错（实测偏 8–39px）。插一个纯红方块，然后在抓帧里找它——这个位置就是真原点。
-
-## 五个坑（都踩过，全是"零报错的坏"）
-
-| # | 症状 | 真因 | 修法 |
-|---|---|---|---|
-| 1 | 只录到左上 1/4 | `ShowWindow(SW_MAXIMIZE)` 把窗口撑到 3440 宽，而录制区域是 1920×1080 | 用 `SetWindowPos` 把窗口**钉死**，不最大化 |
-| 2 | 坐标对了，点下去没反应，也不报错 | 窗口刚激活时，**第一次点击被系统当成"激活"吃掉** | 开录**之前**在标题栏点一下，把这一下消费掉（不进画面） |
-| 3 | 点击位置整体偏 8–39px | 用 `outerHeight−innerHeight` 估浏览器 UI 高度 | 红块 + 像素校准（`calib.py`） |
-| 4 | 一开录就在目标 tab，不是初始状态 | 页面把 tab 写进 URL hash，`reload()` 会原样恢复 | 别 reload，用 `goto(url)` 重来 |
-| 5 | 录出一段空白错误页，脚本全绿 | 网络抽风时 `page.goto()` **照样返回成功**（返回的是错误页） | 等哨兵（`button,select,a` > 4）+ 重试 3 次 + 目标数 == 0 直接拒录 |
-
-第 2 和第 5 是同一个病：**调用了 ≠ 发生了**。
-
-## 脚本格式（`--steps` 的 JSON）
-
-```json
-{
-  "prep":  [{"sel":"button.tab-button","idx":1,"wait":1200}],
-  "steps": [
-    {"sel":"button.tab-button","idx":1,"label":"切到离线安装","wait":1.6},
-    {"sel":"select","idx":0,"label":"平台下拉","hover":true,"wait":0.9},
-    {"sel":"#download","idx":0,"label":"下载按钮","wait":1.9}
-  ]
-}
-```
-
-- `sel` + `idx`：CSS 选择器与序号；`hover:true` 表示"手移过去但不点"（录下拉/按钮预览）
-- `wait`：这一动作后停多久
-- `prep`：只在**测量阶段**执行（用来把页面切到目标状态），录制前会重新 `goto` 复位
-- 量不到的元素可以给屏幕绝对坐标 `{"x":953,"y":786}`（浏览器自己的 UI，DOM 里没有）
-
-## 能力边界
-
-- **仅 Windows**（`gdigrab` + `user32`）。macOS/Linux 要换采集后端。
-- 只能录**本机能打开的东西**。需要真装 3GB 离线包、真插板子、真串口的镜头，机器替不了人。
-- 录制期间会**临时关掉系统通知**（`record_mode.ps1`），结束必须还原——脚本已处理。
-- 只按 PID 杀自己开的浏览器，**不要** `taskkill /IM chrome.exe`（会杀掉用户自己的窗口）。
-
-## 录完之后的第二步
-
-录屏素材只是原料。要变成讲解段（固定取景框 + 框内推近 + 右栏要点 + 音画对齐），
-见 [`../references/recording-enhance.md`](../references/recording-enhance.md)。
+> **早期版本**（只含 `rec_web` / `mouse` / `calib` / `web_drive` 四件，讲"为什么不用无头录屏与软件光标"）
+> 见 [`README-legacy.md`](README-legacy.md)。
 
 ---
 
-## English quickstart
+## 一 三十秒看懂
 
-Windows-only. Records a real browser session **with a real cursor** (not a software cursor).
+| 问题 | 答案 |
+|---|---|
+| 能录什么 | **软件操作**：网页（真 Chrome + DOM 坐标）、原生应用（坐标 + 截图量） |
+| 不能录什么 | **硬件实拍**（板子、接线、串口灯的物理镜头）—— 那需要人和相机，这里一条都不糊 |
+| 产物 | `1920×1080 / 30fps / H.264` 的 mp4，**只录屏幕区域，不录整块桌面** |
+| 要不要我盯着 | 不要。`rec_web.py` 一条命令跑完，含通知开关的成对还原 |
+| 准不准 | 网页按 `getBoundingClientRect()` **精确到 px**；原生应用靠**截图量坐标**，误差 ±20px，且**点空不报错** |
 
-```bash
-set NODE_PATH=C:\path\to\node_modules        # needs puppeteer-core
-python rec_web.py --url "https://example.com/setup" --steps my_steps.json --out out/r01.mp4
+---
+
+## 二 目录
+
+```
+自动录屏工具/
+├── 读我.md                ← 你在这
+├── 规格锁.md              ← 硬参数与硬约束（录之前先读）
+├── BUG库.md               ← 12 条真踩过的坑，全是"零报错"型
+├── 研究结论.md            ← 四轮沉淀：能力边界 / 方法论 / 代码改动清单
+├── 提速与调研.md          ← ★ 2026-10-22：CDP 拿坐标 / 原生剪贴板 / ddagrab 评估 / 少看图的方法
+└── 工具/
+    ├── rec_web.py         ← ★ 网页录屏主入口（自动开浏览器 + 量坐标 + 录制）
+    ├── web_drive.cjs      ← puppeteer 驱动器：DOM 坐标 → 屏幕坐标（画面上插红标自校准）
+    ├── auto_record.py     ← ★ 录屏编排器：关通知 → ffmpeg → 按脚本动 → 校验
+    ├── mouse.py           ← 「人手」：缓动移动 / 点击 / 滚轮 / 打字 / 组合键
+    ├── calib.py           ← 校准：抓一帧、找红标、算视口原点
+    ├── record_mode.ps1    ← 通知开关（成对使用，异常也要还原）
+    ├── probe_eim.cjs      ← 一次性探针：打印页面的 tabs/selects/按钮 id
+    ├── stills.cjs         ← ★ 批量静帧 + 几何回读（一次 Chrome 取 N 个时刻）
+    ├── box_finder.cjs     ← ★ 标注取坐标：给个点，自动吸附元素并吐 B(vx,vy,w,h)（不许目测）
+    ├── win_pos.py         ← ★ 幂等钉窗口：已在目标 rect 就跳过 SetWindowPos（避 RC-007 卡死）
+    ├── cdp_probe.cjs      ← ★ CDP 读 Electron UI 元素真实矩形（VS Code / Slack / Obsidian 都行）
+    ├── cdp_dump.cjs       ← ★ 一次读多个选择器，省掉反复来回
+    ├── anno-kit.js/.css   ← ★ 标注件库：红框 / 荧光笔 / 下划线 / 箭头 / 毛玻璃框
+    ├── anno_check.cjs     ← ★ 标注重闸（时间对齐 / 在画幅内 / 压在内容上 / 边框已画）
+    ├── 标注件-自检.html   ← 五种标注件的活样张，闸门自己验自己
+    └── 录屏步骤/*.json    ← 可重放的点击脚本（案例：r01/r02/r03/r09）
 ```
 
-Three pieces: `web_drive.cjs` (headful Chrome + DOM rects + a red calibration marker) →
-`calib.py` (find the marker in a grabbed frame = viewport origin) → `auto_record.py` (region capture + real mouse).
-`rec_web.py` chains them into one command, plus warm-up, page sentinel, and refusal to record an error page.
+---
 
-Five pitfalls, all "silent failures": window maximized past the capture region; the first click swallowed by window activation;
-viewport origin guessed from `outerHeight−innerHeight` (off by 8–39px); `reload()` restoring a URL-hash tab state;
-`goto()` resolving on an error page. Details in the table above.
+## 三 三条命令
+
+```bash
+# 前置：puppeteer-core 与本机 Chrome
+export NODE_PATH="$(pwd)/node_modules"   # npm i puppeteer-core 后指向它
+
+# ① 网页录屏（自动开浏览器、量坐标、录制、校验）
+python 工具/rec_web.py --url "https://example.com" \
+    --steps 工具/录屏步骤/r01_final.json --out ./r01.mp4 --region 0,0,1920,1080
+
+# ② 原生应用 / 已有窗口录屏（脚本自己动鼠标）
+python 工具/auto_record.py --script 工具/录屏步骤/auto_rec.json \
+    --out ./app.mp4 --region 0,0,1920,1080 --dur 16
+
+# ③ 标坐标：给个点，工具吐精确矩形（**不许目测**）
+node 工具/box_finder.cjs "../某项目/录屏R01-美化.html" 9.4 786,318 --tol 28
+
+# ③′ Electron 应用（VS Code 等）：先用 CDP 读，0 误差，别截图数像素
+code --remote-debugging-port=9222 --new-window      # 启动时带上（且清掉 ELECTRON_RUN_AS_NODE）
+node 工具/cdp_dump.cjs '[".activitybar .action-item",".monaco-list-row"]'
+
+# ④ 标完过闸；--neg 40 是负控，必须变红
+node 工具/anno_check.cjs "../某项目/录屏R01-美化.html" --neg 40
+```
+
+`anno_check.cjs` 的 `--neg 40` 是**负控**：把框整体挪 40px 再判，**必须变红**。
+不红 = 判据没牙，先修判据再谈片子。
+
+---
+
+## 三·五 标注件：五种，各有各的活
+
+> 需求方 2026-10-21：「标重这里多使用几个 红框除外 可以使用荧光笔 下划线 箭头 毛玻璃框来展示」
+
+| 件 | 干什么 | 每屏上限 |
+|---|---|---|
+| **红框** | 点明**操作目标**（按钮/输入框/菜单项） | 1 |
+| **荧光笔** | 强调**文字或数值** | 1 |
+| **下划线** | 与荧光笔二选一，走"逐字念到" | 1 |
+| **箭头** | 指**小目标**（红框会糊）或**方向** | 1–2 |
+| **毛玻璃框** | 给区域**打底**，压住花底让字读得清 | 1 |
+
+用法见 `规格锁.md` §2；样张见 `工具/标注件-自检.html`；分工与禁令**不许自创**。
+
+## 四 五条铁律（违反必返工）
+
+1. **`--region` 必须给**。不给就录整块桌面（本机 3440×1440），产物直接废。
+2. **开录前把目标窗口提到最前**。`gdigrab` 抓的是桌面合成结果，窗口在后面就录到别的程序。
+   网页侧 `bringToFront()` 已内置；原生应用要先 `focus()`，且**每次操作前都要重新 focus**。
+3. **通知开关成对**。`record_mode.ps1 on` → 录完立刻 `off`，写在 `finally` 里（异常也还原）。
+4. **一次录一个动作，10–15 秒一条**。不录长段，长了必有一段不能用。
+5. **录完先抽帧看**：有窗口框 / 翻译条 / 通知 / 浮窗 ⇒ 重录，别指望后期救。
+
+---
+
+## 五 已知边界（写在前面，别当 bug）
+
+| 边界 | 原因 | 影响 |
+|---|---|---|
+| 硬件镜头录不了 | 需要人 + 相机 | 板子特写、接线、上电灯这类镜头**必须实拍** |
+| 原生应用靠坐标 | 没有 DOM，只能截图量 | 菜单两项差 20px 会点空，**且不报错**（见 BUG 库 RC-009） |
+| 本机有全局输入钩子 | BitDock/BitSearch 会抢键盘 | **打字一律用剪贴板 + Ctrl+V**，不要 `keybd_event` 逐字打（RC-011） |
+| Electron 应用要先清环境变量 | Shell 里带 `ELECTRON_RUN_AS_NODE=1` | 不清则窗口永不出现（RC-010） |
+| 录屏时长上限 | 单条建议 ≤ 20s | 长了文件大、返工贵，且中途弹窗概率直线上升 |
+
+---
+
+## 六 与其它项目的关系
+
+| 项目 | 关系 |
+|---|---|
+| `语音转动画总项目/15-ESP32教程` | **下游**：本工具录出的原始片段交给它的美化页（红框 + 运镜 + 右栏卡片） |
+| `语音转动画总项目/导演台` | 无关（那是 3D 运镜编辑台，不碰录屏） |
+
+> 教程线那边只留一个指针文件；**改工具只改这里，不要回去改副本**。

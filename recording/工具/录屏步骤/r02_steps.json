@@ -1,0 +1,14 @@
+{
+ "prep": [
+  {"sel": "button.tab-button", "idx": 1, "wait": 1200}
+ ],
+ "postprep": [
+  {"sel": "button.tab-button", "idx": 1, "wait": 1400}
+ ],
+ "steps": [
+  {"sel": "#idf-version", "idx": 0, "label": "版本下拉 v6.1", "hover": true, "wait": 1.2},
+  {"sel": "#download-offline-installer", "idx": 0, "label": "Download 按钮", "wait": 3.4},
+  {"sel": "@screen", "x": 1816, "y": 61, "label": "下载图标", "click": true, "wait": 1.5},
+  {"sel": "@screen", "x": 1690, "y": 152, "label": "下载栏体积", "wait": 2.8}
+ ]
+}

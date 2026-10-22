@@ -1,0 +1,30 @@
+{
+ "prep": [
+  {
+   "sel": "button.tab-button",
+   "idx": 1,
+   "wait": 1200
+  }
+ ],
+ "steps": [
+  {
+   "sel": "button.tab-button",
+   "idx": 1,
+   "label": "Offline 标签",
+   "wait": 1.6
+  },
+  {
+   "sel": "select",
+   "idx": 0,
+   "label": "Platform 下拉",
+   "hover": true,
+   "wait": 0.9
+  },
+  {
+   "sel": "#download-offline-installer",
+   "idx": 0,
+   "label": "Download 按钮",
+   "wait": 1.9
+  }
+ ]
+}

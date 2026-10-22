@@ -1,0 +1,19 @@
+{"name":"r09","steps":[
+ {"do":"wait","s":0.9},
+ {"do":"move","x":28,"y":287,"dur":1.0,"curve":0.08},
+ {"do":"wait","s":0.5},
+ {"do":"click"},
+ {"do":"wait","s":2.4},
+ {"do":"move","x":196,"y":75,"dur":0.9,"curve":0.06},
+ {"do":"wait","s":0.4},
+ {"do":"click"},
+ {"do":"wait","s":0.4},
+ {"do":"hotkey","mod":17,"vk":65},
+ {"do":"wait","s":0.25},
+ {"do":"press","vk":46},
+ {"do":"wait","s":0.7},
+ {"do":"hotkey","mod":17,"vk":86},
+ {"do":"wait","s":3.6},
+ {"do":"move","x":196,"y":155,"dur":1.2,"curve":0.1},
+ {"do":"wait","s":2.3}
+]}

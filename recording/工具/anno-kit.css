@@ -1,0 +1,38 @@
+/* anno-kit.css —— 标注件库（红框 / 荧光笔 / 下划线 / 箭头 / 毛玻璃框）
+ *
+ * 全部由 JS 逐帧驱动（禁 CSS animation / transition —— 逐帧 seek 的片子里 CSS 动画不可控）。
+ * 坐标一律用**视频坐标**（1920×1080 那一套），由 JS 乘 K 换成取景框内坐标。
+ */
+.ak{position:absolute;pointer-events:none;will-change:transform,opacity}
+
+/* ① 红框：点明"这一步点这里"。一屏 ≤1 处 */
+.ak-box{border:3px solid var(--sig,#C8342A);border-radius:5px;opacity:0}
+
+/* ② 荧光笔：横刷一道，末端略斜，像真的马克笔。一屏 ≤1 处 */
+.ak-pen{background:rgba(255,214,64,.62);border-radius:2px;opacity:0;transform-origin:0 50%}
+
+/* ③ 下划线：2.5px 实线，从左侧长出来 */
+.ak-under{background:var(--sig,#C8342A);height:2.5px;opacity:0;transform-origin:0 50%}
+
+/* ④ 箭头：SVG 画线 + 箭头，末端落在目标边上 */
+.ak-arrow{opacity:0;overflow:visible}
+.ak-arrow svg{display:block;overflow:visible}
+.ak-arrow path{fill:none;stroke:var(--sig,#C8342A);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.ak-arrow polygon{fill:var(--sig,#C8342A)}
+
+/* ⑤ 毛玻璃框：压住花底让字能读（需求方点名的第四种） */
+.ak-glass{
+  opacity:0;border-radius:8px;
+  background:rgba(255,255,255,.36);
+  -webkit-backdrop-filter:blur(9px) saturate(150%);
+  backdrop-filter:blur(9px) saturate(150%);
+  border:1px solid rgba(22,24,28,.22);
+  box-shadow:0 6px 18px rgba(22,24,28,.10);
+}
+/* 框内标签：只在 glass 上用，红底白字 */
+.ak-tag{
+  position:absolute;left:0;bottom:100%;margin-bottom:6px;
+  font:800 15px/1.2 -apple-system,"PingFang SC",sans-serif;
+  color:#fff;background:var(--sig,#C8342A);padding:4px 10px;border-radius:3px;
+  white-space:nowrap;opacity:0;
+}

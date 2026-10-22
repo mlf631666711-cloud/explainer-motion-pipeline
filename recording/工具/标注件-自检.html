@@ -1,0 +1,62 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>标注件自检 · 红框 / 荧光笔 / 下划线 / 箭头 / 毛玻璃框</title>
+<link rel="stylesheet" href="anno-kit.css">
+<style>
+:root{--paper:#F7F7F3;--ink:#16181C;--sig:#C8342A}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#111}
+#stage{position:relative;width:1920px;height:1080px;background:var(--paper);overflow:hidden;transform-origin:0 0;
+ font-family:-apple-system,"PingFang SC",sans-serif}
+#win{position:absolute;left:96px;top:154px;width:1372px;height:772px;background:#fff;border:3px solid var(--ink);
+ box-shadow:14px 14px 0 rgba(22,24,28,.14);overflow:hidden}
+#cam{position:absolute;inset:0;width:1366px;height:766px;overflow:hidden}
+/* 假界面：够多的边和字，让 A4（压在内容上）有东西可量 */
+#fake{position:absolute;inset:0;background:#FBFBF8}
+#fake .bar{position:absolute;left:0;right:0;top:0;height:56px;background:#1F2A3A}
+#fake .bar i{position:absolute;top:18px;width:120px;height:8px;background:#7E8CA3;border-radius:2px}
+#fake h1{position:absolute;left:80px;top:96px;margin:0;font-size:34px;color:#16181C;letter-spacing:-.5px}
+#fake p{position:absolute;left:80px;top:160px;margin:0;font-size:18px;color:#5A6068;line-height:1.7;width:620px}
+#fake .btn{position:absolute;left:480px;top:300px;width:300px;height:56px;background:#C8342A;border-radius:4px;
+ color:#fff;font:800 19px/56px sans-serif;text-align:center}
+#fake .card{position:absolute;left:900px;top:430px;width:380px;height:210px;background:#fff;border:2px solid #D2D8E1;border-radius:8px}
+#fake .card b{position:absolute;left:22px;top:20px;font-size:22px;color:#16181C}
+#fake .card span{position:absolute;left:22px;top:60px;font-size:15px;color:#6B7280;line-height:1.8;width:330px;display:block}
+#fake .kpi{position:absolute;left:80px;top:430px;width:340px;height:120px;background:#F1F3F6;border-radius:6px}
+#fake .kpi b{position:absolute;left:24px;top:22px;font:800 44px/1 sans-serif;color:#16181C}
+#fake .kpi span{position:absolute;left:24px;top:78px;font-size:15px;color:#6B7280}
+</style></head><body>
+<div id="stage">
+  <div id="win"><div id="cam">
+    <div id="fake">
+      <div class="bar"><i style="left:24px"></i><i style="left:168px"></i><i style="left:312px"></i></div>
+      <h1>ESP-IDF Installation Manager</h1>
+      <p>离线安装：安装器与整合包必须放在同一个目录。<br>安装路径只允许英文，不能有中文、空格或特殊字符。</p>
+      <div class="btn">DownLoading...</div>
+      <div class="kpi"><b>34.2 MB</b><span>安装器体积（离线包 3.2 GB）</span></div>
+      <div class="card"><b>双文件需同目录</b><span>安装器按同目录校验完整性；<br>缺一个会直接停在解包阶段。</span></div>
+    </div>
+  </div></div>
+</div>
+<script src="anno-kit.js"></script>
+<script>
+var K = 0.71146;
+ANNO.init({ layer: '#cam', K: K });
+// 假界面里的东西是按「取景框内 CSS 像素」摆的，这里换算成视频坐标再喂给 kit
+var V = function (css) { return css / K; };
+
+// ① 红框：点按钮
+ANNO.box({ t0: 1.0, t1: 4.2, vx: V(472), vy: V(292), vw: V(316), vh: V(72) });
+// ② 荧光笔：刷标题下面那句
+ANNO.pen({ t0: 4.6, t1: 7.0, vx: V(78), vy: V(206), vw: V(620), vh: V(22) });
+// ③ 下划线：KPI 数字下沿
+ANNO.under({ t0: 7.4, t1: 9.2, vx: V(78), vy: V(500), vw: V(300) });
+// ④ 箭头：从右侧空白处指到按钮
+ANNO.arrow({ t0: 9.6, t1: 12.0, vx: V(1240), vy: V(250), toVx: V(800), toVy: V(330) });
+// ⑤ 毛玻璃框：卡片上，压住背景让字读得清
+ANNO.glass({ t0: 12.4, t1: 15.0, vx: V(892), vy: V(422), vw: V(396), vh: V(226), label: '③ 同目录才认' });
+
+window.vmap = function (t) { return t; };
+window.render = function (t) { ANNO.tick(t); };
+window.renderAsync = function (t) { render(t); return Promise.resolve(); };
+window.DUR = 16;
+render(0);
+</script>
+</body></html>

@@ -1,0 +1,69 @@
+{
+ "name": "r03r04",
+ "steps": [
+  {
+   "do": "focus",
+   "title": "ESP-IDF Installation Manager(EIM)",
+   "size": "1920x1080",
+   "pos": "0,0"
+  },
+  {
+   "do": "wait",
+   "s": 1.4
+  },
+  {
+   "do": "move",
+   "x": 1490,
+   "y": 57,
+   "dur": 1.0,
+   "curve": 0.08
+  },
+  {
+   "do": "wait",
+   "s": 0.6
+  },
+  {
+   "do": "click"
+  },
+  {
+   "do": "wait",
+   "s": 1.6
+  },
+  {
+   "do": "move",
+   "x": 1205,
+   "y": 100,
+   "dur": 0.8,
+   "curve": 0.05
+  },
+  {
+   "do": "wait",
+   "s": 0.7
+  },
+  {
+   "do": "click"
+  },
+  {
+   "do": "wait",
+   "s": 2.6
+  },
+  {
+   "do": "move",
+   "x": 716,
+   "y": 711,
+   "dur": 1.3,
+   "curve": 0.12
+  },
+  {
+   "do": "wait",
+   "s": 3.2
+  },
+  {
+   "do": "move",
+   "x": 716,
+   "y": 708,
+   "dur": 0.5,
+   "curve": 0
+  }
+ ]
+}

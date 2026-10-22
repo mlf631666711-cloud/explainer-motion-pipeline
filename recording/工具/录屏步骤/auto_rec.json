@@ -1,0 +1,85 @@
+{
+ "name": "web",
+ "steps": [
+  {
+   "do": "focus",
+   "title": "ESP-IDF Installation Manager",
+   "size": "1920x1080",
+   "pos": "0,0"
+  },
+  {
+   "do": "wait",
+   "s": 1.2
+  },
+  {
+   "do": "move",
+   "x": 953,
+   "y": 888,
+   "dur": 1.0,
+   "curve": 0.1
+  },
+  {
+   "do": "wait",
+   "s": 0.28
+  },
+  {
+   "do": "wait",
+   "s": 1.2
+  },
+  {
+   "do": "move",
+   "x": 953,
+   "y": 960,
+   "dur": 1.0,
+   "curve": 0.1
+  },
+  {
+   "do": "wait",
+   "s": 0.28
+  },
+  {
+   "do": "click"
+  },
+  {
+   "do": "wait",
+   "s": 3.4
+  },
+  {
+   "do": "move",
+   "x": 1816,
+   "y": 61,
+   "dur": 0.9,
+   "curve": 0.06
+  },
+  {
+   "do": "wait",
+   "s": 0.25
+  },
+  {
+   "do": "click"
+  },
+  {
+   "do": "wait",
+   "s": 1.5
+  },
+  {
+   "do": "move",
+   "x": 1690,
+   "y": 152,
+   "dur": 0.9,
+   "curve": 0.06
+  },
+  {
+   "do": "wait",
+   "s": 0.25
+  },
+  {
+   "do": "wait",
+   "s": 2.8
+  },
+  {
+   "do": "wait",
+   "s": 1.6
+  }
+ ]
+}
